@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: lifestyle-telemetry
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lightweight-grafana
+  namespace: lifestyle-telemetry
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: lightweight-grafana
+  template:
+    metadata:
+      labels:
+        app: lightweight-grafana
+    spec:
+      securityContext:
+        fsGroup: 472
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.0.0
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: datasources-volume
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: provider-volume
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboards-json-volume
+          mountPath: /etc/grafana/dashboards
+      volumes:
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-pvc
+      - name: datasources-volume
+        configMap:
+          name: grafana-datasources
+      - name: provider-volume
+        configMap:
+          name: grafana-dashboard-provider
+      - name: dashboards-json-volume
+        configMap:
+          name: grafana-dashboards-json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-svc
+  namespace: lifestyle-telemetry
+spec:
+  type: ClusterIP
+  selector:
+    app: lightweight-grafana
+  ports:
+  - port: 3000
+    targetPort: 3000

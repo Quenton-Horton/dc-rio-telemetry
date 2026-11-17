@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DC • Rio Lifestyle & Logistics Telemetry</title>
+    <style>
+        body {
+            background-image: url('{{ .BgImage }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 3.5vw;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+        .telemetry-card {
+            background: rgba(232, 230, 225, 0.82); 
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            padding: 34px 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px 34px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            color: #1a1a1a;
+            max-width: 580px;
+            width: 100%;
+        }
+        h1 { 
+            font-size: 0.68rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.15em; 
+            grid-column: 1 / -1; 
+            border-bottom: 1px solid rgba(0,0,0,0.15); 
+            padding-bottom: 10px;
+            margin: 0;
+            color: #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .sync-meta {
+            font-size: 0.58rem;
+            letter-spacing: 0.08em;
+            color: #666;
+            font-weight: 400;
+        }
+        .section-divider { margin-top: 6px; }
+        .metric { margin-bottom: 0; }
+        .label { 
+            font-size: 0.63rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+            color: #555; 
+            margin-bottom: 4px; 
+        }
+        .value { 
+            font-size: 2.35rem;
+            font-weight: 500; 
+            letter-spacing: -0.03em; 
+            line-height: 1.05;
+        }
+        .sub-label {
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #666;
+            margin-top: 5px;
+        }
+        .accent { color: #8a6a4b; }
+        .flight-board {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .flight-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px dashed rgba(0,0,0,0.14);
+        }
+        .flight-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cabin-badge {
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            padding: 3px 6px;
+            text-transform: uppercase;
+            background: #1a1a1a;
+            color: #e8e6e1;
+        }
+        .cabin-prem {
+            background: #8a6a4b;
+            color: #fff;
+        }
+        .flight-carrier {
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .flight-specs {
+            font-size: 0.65rem;
+            color: #555;
+            letter-spacing: 0.04em;
+            margin-top: 3px;
+        }
+        .flight-price {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #8a6a4b;
+            white-space: nowrap;
+        }
+        .status-safe { 
+            color: #2e5a36; 
+            font-size: 1.65rem;
+            letter-spacing: 0.02em;
+            padding-top: 4px;
+        }
+        .status-embargo { 
+            color: #9e3a2b; 
+            font-size: 1.65rem;
+            letter-spacing: 0.02em;
+            padding-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="telemetry-card">
+        <h1>
+            <span>Rio de Janeiro • Zona Sul / GIG</span>
+            <span class="sync-meta">LIVE 15M</span>
+        </h1>
+        <div class="metric">
+            <div class="label">Temperature</div>
+            <div class="value">{{ .Temp }}&deg;F</div>
+        </div>
+        <div class="metric">
+            <div class="label">USD / BRL</div>
+            <div class="value accent">R${{ .FX }}</div>
+        </div>
+        <div class="metric">
+            <div class="label">Rain Volume</div>
+            <div class="value">{{ .Rain }} in</div>
+        </div>
+        <div class="metric">
+            <div class="label">Humidity</div>
+            <div class="value">{{ .Humidity }}%</div>
+        </div>
+
+        <h1 class="section-divider">
+            <span>IAD &rarr; GIG • Wide-Body ({{ .TargetDate }})</span>
+            <span class="sync-meta">SYNCED {{ .FlightSyncedAt }} • {{ .QuotaUsed }}/50</span>
+        </h1>
+
+        <div class="flight-board">
+            {{ range .Flights }}
+            <div class="flight-row">
+                <div>
+                    <div class="flight-title">
+                        {{ if eq .Cabin "BUSINESS" }}
+                            <span class="cabin-badge">BUSINESS</span>
+                        {{ else }}
+                            <span class="cabin-badge cabin-prem">{{ .Cabin }}</span>
+                        {{ end }}
+                        <span class="flight-carrier">{{ .Carrier }}</span>
+                    </div>
+                    <div class="flight-specs">
+                        Dep {{ .DepartureTime }}{{ if .Legroom }} • {{ .Legroom }}{{ end }}
+                    </div>
+                </div>
+                <div class="flight-price">${{ printf "%.0f" .PriceUSD }}</div>
+            </div>
+            {{ else }}
+            <div class="flight-row">
+                <span class="flight-carrier">Awaiting Wide-Body Sync...</span>
+            </div>
+            {{ end }}
+        </div>
+
+        <div class="metric">
+            <div class="label">Dulles Tarmac (IAD)</div>
+            <div class="value">{{ .IADTemp }}&deg;F</div>
+            <div class="sub-label">{{ .IADHumidity }}% Humidity</div>
+        </div>
+        <div class="metric">
+            <div class="label">Poodle Tarmac Window</div>
+            {{ if eq .SafePets "true" }}
+                <div class="value status-safe">CLEARED</div>
+                <div class="sub-label">45&deg;F &ndash; 85&deg;F Safe</div>
+            {{ else }}
+                <div class="value status-embargo">EMBARGO</div>
+                <div class="sub-label">Out of 45&deg;F &ndash; 85&deg;F Bounds</div>
+            {{ end }}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,223 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: lifestyle-telemetry
+data:
+  datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus-ds
+        access: proxy
+        url: http://prometheus-svc.lifestyle-telemetry.svc.cluster.local:9090
+        isDefault: true
+        editable: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: lifestyle-telemetry
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'dc-rio-provider'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /etc/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-json
+  namespace: lifestyle-telemetry
+data:
+  dc-rio-dashboard.json: |
+    {
+      "title": "DC & Rio Logistics Telemetry",
+      "uid": "dc-rio-logistics",
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 2,
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "IAD -> GIG One-Way Flight Price (USD)",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_flight_price_usd",
+              "legendFormat": "{{carrier}} ({{origin}}->{{destination}})",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "currencyUSD",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1200 },
+                  { "color": "red", "value": 2500 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "USD to BRL Exchange Rate",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_fx_usd_brl",
+              "legendFormat": "1 USD in BRL",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 4,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "blue", "value": null },
+                  { "color": "green", "value": 5.5 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Tarmac Temperatures (Poodle Safety Window: 45°F - 85°F)",
+          "type": "gauge",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_tarmac_temp_fahrenheit",
+              "legendFormat": "{{code}} ({{airport}})",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "fahrenheit",
+              "min": 0,
+              "max": 110,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "blue", "value": null },
+                  { "color": "green", "value": 45 },
+                  { "color": "red", "value": 85 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "Relative Humidity (%)",
+          "type": "gauge",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_weather_humidity_percent",
+              "legendFormat": "{{code}} ({{location}})",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "orange", "value": 85 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 6,
+          "title": "Current Precipitation / Rain (Inches)",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_weather_rain_inches",
+              "legendFormat": "{{code}} ({{location}})",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "lengthin",
+              "decimals": 2,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "blue", "value": 0.01 },
+                  { "color": "purple", "value": 0.25 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Flight Price, Temperature & Humidity History",
+          "type": "timeseries",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_flight_price_usd",
+              "legendFormat": "Flight USD ({{carrier}})",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_tarmac_temp_fahrenheit",
+              "legendFormat": "Temp °F ({{code}})",
+              "refId": "B"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus-ds" },
+              "expr": "logistics_weather_humidity_percent",
+              "legendFormat": "Humidity % ({{code}})",
+              "refId": "C"
+            }
+          ]
+        }
+      ]
+    }
